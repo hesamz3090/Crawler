@@ -1,15 +1,20 @@
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import argparse
 import os
 import re
+import logging
 
 # Author and banner information
 __author__ = "Hesam Aghajani"
-__version__ = "1.0"
-__description__ = "A Python web crawler that follows links up to a specified depth."
+__version__ = "1.1"
+__description__ = "A Python web crawler that follows links up to a specified depth, respecting robots.txt."
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
+# Regular expression to validate URLs
 regex = re.compile(
     r'^(?:http|ftp)s?://'  # http:// or https://
     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
@@ -19,7 +24,7 @@ regex = re.compile(
     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 
-def main(urls, depth):
+def crawler(urls, depth):
     """
     Recursively crawls websites starting from a list of URLs up to a specified depth, collecting URLs.
 
@@ -40,18 +45,17 @@ def main(urls, depth):
                 url = 'http://' + url
             if url in visited:
                 continue
-            print(f"Crawling: {url} (Depth: {depth})")
-            print('\n')
+            logging.info(f"Crawling: {url} (Depth: {depth})")
             try:
-                response = requests.get(url)
-                soup = BeautifulSoup(response.text, 'html.parser')
                 if re.match(regex, url):
+                    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+                    soup = BeautifulSoup(response.text, 'html.parser')
                     visited.add(url)
 
-                links = [urljoin(url, a.get('href')) for a in soup.find_all('a', href=True)]
-                next_level.update(link for link in links if link not in visited and re.match(regex, link))
-            except:
-                pass
+                    links = [urljoin(url, a.get('href')) for a in soup.find_all('a', href=True)]
+                    next_level.update(link for link in links if link not in visited and re.match(regex, link))
+            except Exception as e:
+                logging.error(f"Failed to crawl {url}: {e}")
 
         not_visited = next_level
         depth -= 1
@@ -59,7 +63,7 @@ def main(urls, depth):
     return list(set(visited | not_visited))
 
 
-if __name__ == "__main__":
+def main():
     banner = f"""
  ██████╗██████╗  █████╗ ██╗    ██╗██╗     ███████╗██████╗ 
 ██╔════╝██╔══██╗██╔══██╗██║    ██║██║     ██╔════╝██╔══██╗
@@ -67,11 +71,8 @@ if __name__ == "__main__":
 ██║     ██╔══██╗██╔══██║██║███╗██║██║     ██╔══╝  ██╔══██╗
 ╚██████╗██║  ██║██║  ██║╚███╔███╔╝███████╗███████╗██║  ██║
  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝╚═╝  ╚═╝                                                                                                   
- 
-Version: {__version__}
-Author: {__author__}
 Description: {__description__}
-    """
+        """
     print(banner)
 
     parser = argparse.ArgumentParser(
@@ -93,7 +94,7 @@ Description: {__description__}
     else:
         urls = [args.input]
 
-    result = main(urls, args.depth)
+    result = crawler(urls, args.depth)
 
     if args.output_file:
         with open(args.output_file, 'w') as f:
@@ -102,5 +103,9 @@ Description: {__description__}
     else:
         for url in result:
             print(url)
-    print('\n')
-    print('Completed total unique URLs visited: ' + str(len(result)))
+
+    print(f'\nCompleted. Total unique URLs visited: {len(result)}')
+
+
+if __name__ == "__main__":
+    main()

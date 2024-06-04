@@ -1,13 +1,13 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='Crawler',
-    version='1.0',
+    version='1.1',
     author='Hesam Aghajani',
     author_email='hesamz3090@gmail.com',
     python_requires='>=3',
-    install_requires=['requests', 'bs4'],
-    packages=find_packages() + ['.'],
+    install_requires=['requests', 'beautifulsoup4'],
+    py_modules=['crawler'],  # Use py_modules for single-file modules
     include_package_data=True,
     description='A Python web crawler that follows links up to a specified depth',
     long_description=open('README.md').read(),
