@@ -7,7 +7,7 @@ setup(
     author_email='hesamz3090@gmail.com',
     python_requires='>=3',
     install_requires=['requests', 'beautifulsoup4'],
-    py_modules=['crawler'],  # Use py_modules for single-file modules
+    py_modules=['crawler'],
     include_package_data=True,
     description='A Python web crawler that follows links up to a specified depth',
     long_description=open('README.md').read(),
