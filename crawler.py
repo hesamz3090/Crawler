@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 import argparse
 import os
 import re
